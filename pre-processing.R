@@ -67,3 +67,6 @@ selected_data <- selected_data %>%
     Total.ST.min = hm_to_min(Total.ST),
     Social.ST.min = hm_to_min(Social.ST)
   )
+
+data = selected_data[c("pseudo_ID", "Date", "Total.ST.min", "Social.ST.min", "Pickups")]
+
