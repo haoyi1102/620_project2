@@ -20,7 +20,7 @@ convert_dates <- function(date) {
   return(date)
 }
 
-  # Apply the function to the date column
+# Apply the function to the date column
 df$Date <- sapply(df$Date, convert_dates)
 
 # Find the location of the last non-NA Date value with pseudo_id 6419
@@ -39,7 +39,7 @@ for (i in (last_valid_index+1):nrow(df)) {
   }
 }
 
-selected_data <- df[c("pseudo_ID", "Date", "Total.ST", "Social.ST", "Pickups")]
+
 
 #hm_to_min = function(hm){unlist(lapply(hm,function(x){splt = strsplit(x,"h")[[1]];hr = as.numeric(splt[1]); mn = as.numeric(strsplit(splt[2],"m")[[1]][1]); return(60*hr + mn)}))}
 
@@ -56,17 +56,49 @@ hm_to_min <- function(hm) {
     } else if (grepl("m", x)) {
       mn = as.numeric(strsplit(x, "m")[[1]][1])
       return(mn)
-    } else {
-      return(NA)  # Return NA for formats that do not match expected pattern
-    }
+    } 
   }))
 }
+st_count = 0
+st_na_id = list()
+for( i in 1:nrow(df)){
+  if(is.na(df$Total.ST[i]) == 1 & is.na(df$Total.ST.min[i]) == 1){
+    st_na_id = c(st_na_id,df$pseudo_ID[i])
+    st_count = st_count +1
+  }else if(is.na(df$Total.ST[i]) == 0 & is.na(df$Total.ST.min[i]) == 1){
+    df$Total.ST.min[i] = hm_to_min(df$Total.ST[i])
+  }
+  st_na_id = unique(st_na_id)
+}
 
-selected_data <- selected_data %>%
+social_count = 0
+social_na_id = list()
+for( i in 1:nrow(df)){
+  if(is.na(df$Social.ST[i]) == 1 & is.na(df$Social.ST.min[i]) == 1){
+    social_na_id = c(social_na_id,df$pseudo_ID[i])
+    social_count = social_count + 1
+  }else if(is.na(df$Social.ST[i]) == 0 & is.na(df$Social.ST.min[i]) == 1){
+    df$Social.ST.min[i] = hm_to_min(df$Social.ST[i])
+  }
+  social_na_id = unique(social_na_id)
+}
+
+selected_data <- df[c("pseudo_ID", "Date", "Total.ST.min", "Social.ST.min", "Pickups")]
+
+## impute
+
+library(dplyr)
+# 先按 pseudo_ID 分组，并去除完全是NA的行：
+data_cleaned <- data %>%
+  group_by(pseudo_ID) %>%
+  filter(!(is.na(Total.ST.min) & is.na(Social.ST.min) & is.na(Pickups)))
+# 应用k-NN补全
+data_imputed <- data_cleaned %>%
+  group_by(pseudo_ID) %>%
   mutate(
-    Total.ST.min = hm_to_min(Total.ST),
-    Social.ST.min = hm_to_min(Social.ST)
+    Total.ST.min = if(all(is.na(Total.ST.min))) NA else kNN(Total.ST.min, k = 5),
+    Social.ST.min = if(all(is.na(Social.ST.min))) NA else kNN(Social.ST.min, k = 5),
+    Pickups = if(all(is.na(Pickups))) NA else kNN(Pickups, k = 5)
   )
 
-data = selected_data[c("pseudo_ID", "Date", "Total.ST.min", "Social.ST.min", "Pickups")]
 
