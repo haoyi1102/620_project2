@@ -85,6 +85,23 @@ for( i in 1:nrow(df)){
 
 selected_data <- df[c("pseudo_ID", "Date", "Total.ST.min", "Social.ST.min", "Pickups")]
 
+all_na_id = list()
+imputation_id = list()
+for(i in 1:nrow(selected_data)){
+  if(is.na(selected_data$Total.ST.min[i]) == 1 &
+     is.na(selected_data$Social.ST.min[i])==1 &
+     is.na(selected_data$Pickups[i])==1){
+    all_na_id = c(all_na_id,selected_data$pseudo_ID[i])
+  }else if(is.na(selected_data$Total.ST.min[i]) == 1 |
+           is.na(selected_data$Social.ST.min[i])==1 |
+           is.na(selected_data$Pickups[i])==1){
+    imputation_id = c(imputation_id,selected_data$pseudo_ID[i])
+  }
+  imputation_id = unique(imputation_id)
+  all_na_id = unique(all_na_id)
+}
+
+
 ## impute
 
 library(dplyr)
