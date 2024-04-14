@@ -104,18 +104,7 @@ for(i in 1:nrow(selected_data)){
 
 ## impute
 
-library(dplyr)
-# 先按 pseudo_ID 分组，并去除完全是NA的行：
-data_cleaned <- data %>%
-  group_by(pseudo_ID) %>%
-  filter(!(is.na(Total.ST.min) & is.na(Social.ST.min) & is.na(Pickups)))
-# 应用k-NN补全
-data_imputed <- data_cleaned %>%
-  group_by(pseudo_ID) %>%
-  mutate(
-    Total.ST.min = if(all(is.na(Total.ST.min))) NA else kNN(Total.ST.min, k = 5),
-    Social.ST.min = if(all(is.na(Social.ST.min))) NA else kNN(Social.ST.min, k = 5),
-    Pickups = if(all(is.na(Pickups))) NA else kNN(Pickups, k = 5)
-  )
+
+
 
 
