@@ -19,4 +19,18 @@ convert_dates <- function(date) {
   # Apply the function to the date column
 df$Date <- sapply(df$Date, convert_dates)
 
+# Find the location of the last non-NA Date value with pseudo_id 6419
+last_valid_index <- max(which(df$pseudo_ID == 6419 & !is.na(df$Date)))
 
+# Gets the Date value for that location and converts it to a Date object
+last_valid_date <- as.Date(df$Date[last_valid_index], "%Y/%m/%d")
+
+# Fill the values for all NA dates of pseudo_id 6419
+for (i in (last_valid_index+1):nrow(df)) {
+  if (df$pseudo_ID[i] == 6419) {
+    # Generate the next date string
+    next_date <- format(last_valid_date + (i - last_valid_index), "%Y/%m/%d")
+    # Assigns the resulting Date string to the Date column
+    df$Date[i] <- next_date
+  }
+}
