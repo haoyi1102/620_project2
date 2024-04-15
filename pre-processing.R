@@ -103,6 +103,11 @@ for(i in 1:nrow(selected_data)){
 
 
 ## impute
+# 确保 Date 列是日期格式
+selected_data$Date <- as.Date(selected_data$Date, format = "%Y/%m/%d")
+# 添加 is_weekday 列
+selected_data <- selected_data %>%
+  mutate(is_weekday = if_else(wday(Date, week_start = 1) %in% 2:6, 1, 0))
 
 
 library(impute)
@@ -111,7 +116,7 @@ library(impute)
 # 2508
 data_2508 <- selected_data %>%
   filter(pseudo_ID == 2508) %>%
-  select(Total.ST.min, Social.ST.min, Pickups)
+  select(Total.ST.min, Social.ST.min, Pickups,is_weekday)
 
 imputed_2508 <- impute.knn(as.matrix(data_2508), k = 5)$data
 data_2508_imputed <- as.data.frame(imputed_2508)
@@ -122,7 +127,7 @@ data_2508_final <- cbind(selected_data %>% filter(pseudo_ID == 2508) %>% select(
 # 4278
 data_4278 <- selected_data %>%
   filter(pseudo_ID == 4278) %>%
-  select(Total.ST.min, Social.ST.min, Pickups)
+  select(Total.ST.min, Social.ST.min, Pickups,is_weekday)
 
 imputed_4278 <- impute.knn(as.matrix(data_4278), k = 5)$data
 data_4278_imputed <- as.data.frame(imputed_4278)
@@ -133,7 +138,7 @@ data_4278_final <- cbind(selected_data %>% filter(pseudo_ID == 4278) %>% select(
 # 2243
 data_2243 <- selected_data %>%
 filter(pseudo_ID == 2243) %>%
-  select(Total.ST.min, Social.ST.min, Pickups)
+  select(Total.ST.min, Social.ST.min, Pickups,is_weekday)
 
 imputed_2243 <- impute.knn(as.matrix(data_2243), k = 5)$data
 data_2243_imputed <- as.data.frame(imputed_2243)
@@ -144,7 +149,7 @@ data_2243_final <- cbind(selected_data %>% filter(pseudo_ID == 2243) %>% select(
 # 957
 data_957 <- selected_data %>%
 filter(pseudo_ID == 957) %>%
-  select(Total.ST.min, Social.ST.min, Pickups)
+  select(Total.ST.min, Social.ST.min, Pickups,is_weekday)
 
 imputed_957 <- impute.knn(as.matrix(data_957), k = 5)$data
 data_957_imputed <- as.data.frame(imputed_957)
@@ -197,8 +202,12 @@ merged_data <- left_join(merged_data, date_range_data %>% select(pseudo_id, Date
 # 设置不在日期范围内的 compliance 为 NA 或其他逻辑值
 merged_data$compliance[is.na(merged_data$compliance)] <- NA
 
+merged_data <- merged_data %>%
+  select(-`...6`)
 
-
+# 添加 has_intervention 列
+merged_data <- merged_data %>%
+  mutate(is_intervention = if_else(is.na(compliance), 0, 1))
 
 # 保存数据到CSV文件
 write.csv(updated_selected_data, "cleaned_data.csv", row.names = FALSE)
