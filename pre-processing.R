@@ -4,7 +4,7 @@ library(lubridate)
 library(dplyr)
 library(ggplot2)
 
-df <- read_xlsx('Fulldata_620W24_Project2.xlsx',sheet = 1)
+df <- read_xlsx('Fulldata_620W24_Project2.xlsx',sheet = 1, na = 'NA')
 bs <- read_xlsx('Fulldata_620W24_Project2.xlsx',sheet = 2)
 
 convert_dates <- function(date) {
@@ -104,7 +104,22 @@ for(i in 1:nrow(selected_data)){
 
 ## impute
 
+<<<<<<< HEAD
 
 
+=======
+library(impute)
+imputed_data <- impute.knn(as.matrix(selected_data[, c("Total.ST.min", "Social.ST.min", "Pickups")]),k=5)$data
+# Convert the imputed data back to a dataframe and combine with the non-imputed columns
+data_imputed <- as.data.frame(imputed_data)
+data_imputed <- cbind(selected_data[1:2], data_imputed) # Assuming the first two columns are 'pseudo_ID' and 'Date'
+
+# Check for rows with all NA and apply mean imputation if any
+for (i in 1:nrow(data_imputed)) {
+  if (all(is.na(data_imputed[i, -c(1,2)]))) { # Assuming the first two columns are 'pseudo_ID' and 'Date'
+    data_imputed[i,] <- apply(data_imputed[, -c(1,2)], 2, mean, na.rm = TRUE)
+  }
+}
+>>>>>>> 16281c741289abea2dba6512a0e094852b3ee0e1
 
 
