@@ -104,22 +104,64 @@ for(i in 1:nrow(selected_data)){
 
 ## impute
 
-<<<<<<< HEAD
 
-
-=======
 library(impute)
-imputed_data <- impute.knn(as.matrix(selected_data[, c("Total.ST.min", "Social.ST.min", "Pickups")]),k=5)$data
-# Convert the imputed data back to a dataframe and combine with the non-imputed columns
-data_imputed <- as.data.frame(imputed_data)
-data_imputed <- cbind(selected_data[1:2], data_imputed) # Assuming the first two columns are 'pseudo_ID' and 'Date'
 
-# Check for rows with all NA and apply mean imputation if any
-for (i in 1:nrow(data_imputed)) {
-  if (all(is.na(data_imputed[i, -c(1,2)]))) { # Assuming the first two columns are 'pseudo_ID' and 'Date'
-    data_imputed[i,] <- apply(data_imputed[, -c(1,2)], 2, mean, na.rm = TRUE)
-  }
-}
->>>>>>> 16281c741289abea2dba6512a0e094852b3ee0e1
 
+# 2508
+data_2508 <- selected_data %>%
+  filter(pseudo_ID == 2508) %>%
+  select(Total.ST.min, Social.ST.min, Pickups)
+
+imputed_2508 <- impute.knn(as.matrix(data_2508), k = 5)$data
+data_2508_imputed <- as.data.frame(imputed_2508)
+colnames(data_2508_imputed) <- c("Total.ST.min", "Social.ST.min", "Pickups")
+
+data_2508_final <- cbind(selected_data %>% filter(pseudo_ID == 2508) %>% select(pseudo_ID, Date), data_2508_imputed)
+
+# 4278
+data_4278 <- selected_data %>%
+  filter(pseudo_ID == 4278) %>%
+  select(Total.ST.min, Social.ST.min, Pickups)
+
+imputed_4278 <- impute.knn(as.matrix(data_4278), k = 5)$data
+data_4278_imputed <- as.data.frame(imputed_4278)
+colnames(data_4278_imputed) <- c("Total.ST.min", "Social.ST.min", "Pickups")
+
+data_4278_final <- cbind(selected_data %>% filter(pseudo_ID == 4278) %>% select(pseudo_ID, Date), data_4278_imputed)
+
+# 2243
+data_2243 <- selected_data %>%
+filter(pseudo_ID == 2243) %>%
+  select(Total.ST.min, Social.ST.min, Pickups)
+
+imputed_2243 <- impute.knn(as.matrix(data_2243), k = 5)$data
+data_2243_imputed <- as.data.frame(imputed_2243)
+colnames(data_2243_imputed) <- c("Total.ST.min", "Social.ST.min", "Pickups")
+
+data_2243_final <- cbind(selected_data %>% filter(pseudo_ID == 2243) %>% select(pseudo_ID, Date), data_2243_imputed)
+
+# 957
+data_957 <- selected_data %>%
+filter(pseudo_ID == 957) %>%
+  select(Total.ST.min, Social.ST.min, Pickups)
+
+imputed_957 <- impute.knn(as.matrix(data_957), k = 5)$data
+data_957_imputed <- as.data.frame(imputed_957)
+colnames(data_957_imputed) <- c("Total.ST.min", "Social.ST.min", "Pickups")
+
+data_957_final <- cbind(selected_data %>% filter(pseudo_ID == 957) %>% select(pseudo_ID, Date), data_957_imputed)
+
+# 合并所有处理后的数据
+final_data <- bind_rows(data_2508_final, data_4278_final, data_2243_final, data_957_final)
+
+# 需要移除的 pseudo_ID 列表
+ids_to_remove <- c(2508, 4278, 2243, 957)
+
+# 从 selected_data 中移除这些 pseudo_ID 的数据
+selected_data_filtered <- selected_data %>%
+  filter(!pseudo_ID %in% ids_to_remove)
+
+# 合并填补后的数据回原始数据集
+updated_selected_data <- bind_rows(selected_data_filtered, final_data)
 
