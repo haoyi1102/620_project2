@@ -165,3 +165,40 @@ selected_data_filtered <- selected_data %>%
 # 合并填补后的数据回原始数据集
 updated_selected_data <- bind_rows(selected_data_filtered, final_data)
 
+updated_selected_data = updated_selected_data %>% 
+  mutate(
+    Daily_Prop_Social_ST = Social.ST.min / Total.ST.min,
+    Daily_Duration_Per_Use = Total.ST.min / Pickups
+  )
+
+# 合并数据集
+colnames(updated_selected_data)[1] <- "pseudo_id"
+merged_data <- left_join(updated_selected_data, bs, by = "pseudo_id")
+
+
+#### 生成compliance
+
+merged_data$Date <- as.Date(merged_data$Date, format = "%Y/%m/%d")
+
+# 筛选指定日期范围的数据
+date_range_data <- merged_data %>%
+  filter(Date >= as.Date("2024-03-27") & Date <= as.Date("2024-04-02"))
+
+# 筛选特定日期范围的数据并计算 compliance
+date_range_data <- merged_data %>%
+  filter(Date >= as.Date("2024-03-27") & Date <= as.Date("2024-04-02")) %>%
+  mutate(compliance = case_when(
+    Treatment == "A" & Total.ST.min <= 200 ~ 1,  # Treatment A，屏幕时间 <= 200分钟
+    Treatment == "B" & Pickups <= 50 ~ 1,        # Treatment B，拿起次数 <= 50次
+    TRUE ~ 0                                     # 其他情况
+  ))
+# 合并计算的 compliance 列回原数据集
+merged_data <- left_join(merged_data, date_range_data %>% select(pseudo_id, Date, compliance), by = c("pseudo_id", "Date"))
+# 设置不在日期范围内的 compliance 为 NA 或其他逻辑值
+merged_data$compliance[is.na(merged_data$compliance)] <- NA
+
+
+
+
+# 保存数据到CSV文件
+write.csv(updated_selected_data, "cleaned_data.csv", row.names = FALSE)
