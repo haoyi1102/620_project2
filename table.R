@@ -49,7 +49,7 @@ table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `
 stA_wo <- stA[!stA$pseudo_id %in% c(9285, 1329), ]
 table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| intervention, data=stA_wo)
 # stB
-library(table1) 
 table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| intervention, data=stB)
 
+table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| Treatment.x, data=st)
 
