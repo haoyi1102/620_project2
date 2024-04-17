@@ -9,6 +9,97 @@ st = left_join(data,bs,by = "pseudo_id")
 st <- st %>% 
   filter(pseudo_id != 1329)
 
+
+################
+## 不区分treatment
+
+
+st_for_compl <- st %>%
+  filter(Date >= as.Date("2024-03-27") & Date <= as.Date("2024-04-02")) %>% 
+  filter(pseudo_id != 9285)%>%
+  group_by(pseudo_id) %>%
+  #summarise(success_rate = mean(compliance == 1, na.rm = TRUE)) %>% 
+  summarise(success_count = sum(compliance == 1, na.rm = TRUE)) %>% 
+  mutate(success_binary = ifelse(success_count > 3, 1, 0))
+# Daily_Prop_Social_ST
+# 筛选指定日期之前的数据
+st_before_date <- st %>%
+  filter(Date < as.Date("2024-03-27"))
+
+# 计算每个人的Daily_Prop_Social_ST的均值
+average_daily_prop <- st_before_date %>%
+  group_by(pseudo_id) %>%
+  summarize(
+    average_Daily_Duration_Per_Use = mean(Daily_Duration_Per_Use, na.rm = TRUE),
+    average_Daily_Prop_Social_ST = mean(Daily_Prop_Social_ST, na.rm = TRUE)
+  )
+
+st_for_compl_with_averages <- st_for_compl %>%
+  left_join(average_daily_prop, by = "pseudo_id")
+
+combined_data_compl <- st_for_compl_with_averages %>%
+  left_join(bs, by = "pseudo_id")
+
+glm_model <- glm(success_binary ~ average_Daily_Prop_Social_ST + average_Daily_Duration_Per_Use + Treatment + `cousre credit` + `procrastination score` + sex, family = binomial(link = "logit"), data = combined_data_compl)
+
+### treatment A
+# compliance成功率/cishu
+st_a_comp <- st[st$Treatment.x == "A",]
+st_for_compl <- st_a_comp %>%
+  filter(Date >= as.Date("2024-03-27") & Date <= as.Date("2024-04-02")) %>% 
+  filter(pseudo_id != 9285)%>%
+  group_by(pseudo_id) %>%
+  #summarise(success_rate = mean(compliance == 1, na.rm = TRUE)) %>% 
+  summarise(success_count = sum(compliance == 1, na.rm = TRUE)) %>% 
+  mutate(success_binary = ifelse(success_count > 3, 1, 0))
+
+
+st_for_compl_with_averages <- st_for_compl %>%
+  left_join(average_daily_prop, by = "pseudo_id")
+
+combined_data_compl <- st_for_compl_with_averages %>%
+  left_join(bs, by = "pseudo_id")
+
+# glm_model <- glm(success_binary ~ average_Daily_Prop_Social_ST + Treatment + `cousre credit` + `procrastination score` + sex, family = binomial(link = "logit"), data = combined_data_compl)
+# summary(glm_model)
+
+# glm_model <- glm(success_binary ~ average_Daily_Prop_Social_ST  + `cousre credit` + `procrastination score` + sex, family = binomial(link = "logit"), data = combined_data_compl)
+
+
+
+# 更新的模型，使用成功次数而非成功率
+glm_model_a <- glm(success_count ~ average_Daily_Prop_Social_ST  + average_Daily_Duration_Per_Use + `cousre credit` + `procrastination score`+ sex, family = poisson(link = "log"), data = combined_data_compl)
+
+
+
+######### treatment B
+
+st_b_comp <- st[st$Treatment.x == "B",]
+st_for_compl_b <- st_b_comp %>%
+  filter(Date >= as.Date("2024-03-27") & Date <= as.Date("2024-04-02")) %>% 
+  filter(pseudo_id != 9285)%>%
+  group_by(pseudo_id) %>%
+  #summarise(success_rate = mean(compliance == 1, na.rm = TRUE)) %>% 
+  summarise(success_count = sum(compliance == 1, na.rm = TRUE)) %>% 
+  mutate(success_binary = ifelse(success_count > 3, 1, 0))
+
+st_for_compl_with_averages <- st_for_compl_b %>%
+  left_join(average_daily_prop, by = "pseudo_id")
+
+combined_data_compl <- st_for_compl_with_averages %>%
+  left_join(bs, by = "pseudo_id")
+
+glm_model_b <- glm(success_count ~ average_Daily_Prop_Social_ST  + average_Daily_Duration_Per_Use + `cousre credit` + `procrastination score` + sex, family = poisson(link = "log"), data = combined_data_compl)
+
+##
+summary(glm_model)
+summary(glm_model_b)
+summary(glm_model_a)
+
+
+################
+
+
 stA = st[st$Treatment.x == "A",]
 stB = st[st$Treatment.x == "B",]
 
