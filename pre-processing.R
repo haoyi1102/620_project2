@@ -7,6 +7,8 @@ library(ggplot2)
 df <- read_xlsx('Fulldata_620W24_Project2.xlsx',sheet = 1, na = 'NA')
 bs <- read_xlsx('Fulldata_620W24_Project2.xlsx',sheet = 2)
 
+
+
 convert_dates <- function(date) {
   if (is.na(as.numeric(date))) { 
     # If the date is not a number, it is assumed to be a string in m/d/y format

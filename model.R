@@ -14,6 +14,7 @@ stB = st[st$Treatment.x == "B",]
 
 stA$intervention = ifelse(is.na(stA$compliance),0,1)
 stB$intervention = ifelse(is.na(stB$compliance),0,1)
+
 stB <- stB %>%
   mutate(is_weekday = if_else(wday(Date, week_start = 1) %in% 2:6, 1, 0))
 
@@ -43,8 +44,9 @@ for(i in 1:nrow(stA)){
 stA <- stA[!is.na(stA$Total.ST.min), ]
 # Linear model comparetion
 modelA = lm(Total.ST.min ~ intervention+Social.ST.min + Pickups+is_weekday,data = stA)
+summary(modelA)
 modelB = lm(Pickups ~ intervention+Social.ST.min + Total.ST.min+is_weekday,data = stB)
-
+summary(modelB)
 # IPW model
 modelAipw = glm(intervention ~ Pickups +Social.ST.min+is_weekday,
                 family = binomial(link = "logit"),
@@ -68,6 +70,7 @@ varA = 1/length(fitted_values_A) * sum(
 )
 
 # IPW 2
+# double robust 
 modelAipw <- glm(intervention ~ Pickups + Social.ST.min + is_weekday,
                  family = binomial(link = "logit"),
                  data = stA)
