@@ -6,10 +6,8 @@ library(ggplot2)
 
 df <- read_xlsx('Fulldata_620W24_Project2.xlsx',sheet = 1, na = 'NA')
 bs <- read_xlsx('Fulldata_620W24_Project2.xlsx',sheet = 2)
-colnames(df)[1] <- 'pseudo_id'
 # Remove all rows with NA with pseudo_id 2243 and 957
-df <- df[!(df$pseudo_id %in% c(2243, 957) & is.na(df$Total.ST)), ]
-colnames(df)[1] <- 'pseudo_ID'
+df <- df[!(df$pseudo_ID %in% c(2243, 957) & is.na(df$Total.ST)), ]
 
 convert_dates <- function(date) {
   if (is.na(as.numeric(date))) { 
