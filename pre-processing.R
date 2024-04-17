@@ -210,4 +210,4 @@ merged_data <- merged_data %>%
   mutate(is_intervention = if_else(is.na(compliance), 0, 1))
 
 # 保存数据到CSV文件
-write.csv(updated_selected_data, "cleaned_data.csv", row.names = FALSE)
+write.csv(merged_data, "cleaned_data.csv", row.names = FALSE)
