@@ -51,5 +51,6 @@ table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `
 # stB
 table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| intervention, data=stB)
 
+# st_AB
 table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| Treatment.x, data=st)
 
