@@ -182,45 +182,131 @@ var_ipw <- sum(weighted_residuals_squared) / length(stA$Total.ST.min)
 
 
 
+# double robostic
+
+dataA = stA[c('Social.ST.min','Pickups','is_weekday')]
+intervention_column <- rep(1, nrow(dataA))
+dataA_intervention <- cbind(intervention = intervention_column, dataA)
+dataA_nonintervention = cbind(intervention = 1- intervention_column, dataA)
+predicted_value_intervention_A <- predict(modelA, newdata = dataA_intervention)
+predicted_value_nonintervention_A <- predict(modelA, newdata = dataA_nonintervention)
+
+modelAipw = glm(intervention ~ Pickups +Social.ST.min+is_weekday,
+                family = binomial(link = "logit"),
+                data = stA
+)
+
+modelBipw = glm(intervention ~ Total.ST.min +Social.ST.min+is_weekday,
+                family = binomial(link = "logit"),
+                data = stB
+)
+fitted_values_A <- fitted(modelAipw)
+fitted_values_B <- fitted(modelBipw)
+
+trt.effect.dr.a = 1/length(fitted_values_A)*sum(
+  stA$intervention * stA$Total.ST.min / fitted_values_A - 
+    (1-stA$intervention) * stA$Total.ST.min / (1-fitted_values_A) -
+    (stA$intervention - fitted_values_A)/fitted_values_A * predicted_value_intervention_A - 
+    (stA$intervention - fitted_values_A)/ (1-fitted_values_A) * predicted_value_nonintervention_A
+)
+
+dataB = stB[c('Social.ST.min','Total.ST.min','is_weekday')]
+intervention_column <- rep(1, nrow(dataB))
+dataB_intervention <- cbind(intervention = intervention_column, dataB)
+dataB_nonintervention = cbind(intervention = 1- intervention_column, dataB)
+predicted_value_intervention_B <- predict(modelB, newdata = dataB_intervention)
+predicted_value_nonintervention_B <- predict(modelB, newdata = dataB_nonintervention)
+Yb = stB$Pickups
+A = stB$intervention
+pi = fitted_values_B
+trt.effect.dr.b = 1/length(pi) * sum(
+  A * Yb / pi - (1-A)*Yb/(1-pi) - (A - pi) / pi * predicted_value_intervention_B - (A - pi)/(1-pi)*predicted_value_nonintervention_B
+)
 
 
-st <- st %>% select(-...6)
+# bootstrap IPW
+set.seed(1234)
+n_bootstrap <- 1000
 
-for(i in 1:nrow(st)){
-  if(st$Date[i]>= as.Date("2024-03-27") &st$Date[i] <= as.Date("2024-04-02")){
-    if(st$Treatment[i] == "A"){
-      st$compliance[i] = ifelse(st$Total.ST.min[i] <= 200 , 1, 0)
-    }else{
-      st$compliance[i] = ifelse(st$Pickups[i] <= 50 , 1, 0)
-    }
-  }
+effect_A_IPW <- numeric(n_bootstrap)
+effect_B_IPW <- numeric(n_bootstrap)
+
+for (i in 1:n_bootstrap) {
+  boot_indices <- sample(nrow(stA), replace = TRUE)
+  boot_data_A <- stA[boot_indices, ]
+  boot_data_B <- stB[boot_indices, ]
+  
+  boot_model_A <- glm(intervention ~ Pickups + Social.ST.min + is_weekday,
+                      family = binomial(link = "logit"), data = boot_data_A)
+  boot_model_B <- glm(intervention ~ Total.ST.min + Social.ST.min + is_weekday,
+                      family = binomial(link = "logit"), data = boot_data_B)
+  
+  fitted_values_A <- fitted(boot_model_A)
+  fitted_values_B <- fitted(boot_model_B)
+  
+  effect_A_IPW[i] <- 1/length(fitted_values_A) * sum(boot_data_A$intervention * boot_data_A$Total.ST.min / fitted_values_A
+                                                     - (1 - boot_data_A$intervention) * boot_data_A$Total.ST.min / (1 - fitted_values_A))
+  effect_B_IPW[i] <- 1/length(fitted_values_B) * sum(boot_data_B$intervention * boot_data_B$Pickups / fitted_values_B
+                                                     - (1 - boot_data_B$intervention) * boot_data_B$Pickups / (1 - fitted_values_B))
 }
 
+var_effect_A_IPW <- var(effect_A_IPW)
+var_effect_B_IPW <- var(effect_B_IPW)
 
-st <- st %>%
-  filter(Date >= as.Date("2024-03-27") & Date <= as.Date("2024-04-02")) %>%
-  mutate(compliance = case_when(
-    Treatment == "A" & Total.ST.min <= 200 ~ 1, 
-    Treatment == "B" & Pickups <= 50 ~ 1,        
-    TRUE ~ 0                                     
-  ))
+var_effect_A_IPW = 484.4584
+var_effect_B_IPW = 14.88707
 
+# bootstrap dr
+n_bootstrap <- 1000
 
+effect.A.dr <- numeric(n_bootstrap)
+effect.B.dr <- numeric(n_bootstrap)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+for (i in 1:n_bootstrap) {
+  boot_indices <- sample(nrow(stA), replace = TRUE)
+  boot_data_A <- stA[boot_indices, ]
+  boot_data_B <- stB[boot_indices, ]
+  
+  modelA = lm(Total.ST.min ~ intervention+Social.ST.min + Pickups+is_weekday,data = boot_data_A)
+  modelB = lm(Pickups ~ intervention+Social.ST.min + Total.ST.min+is_weekday,data = boot_data_B)
+  
+  boot_model_A <- glm(intervention ~ Pickups + Social.ST.min + is_weekday,
+                      family = binomial(link = "logit"), data = boot_data_A)
+  boot_model_B <- glm(intervention ~ Total.ST.min + Social.ST.min + is_weekday,
+                      family = binomial(link = "logit"), data = boot_data_B)
+  
+  fitted_values_A <- fitted(boot_model_A)
+  fitted_values_B <- fitted(boot_model_B)
+  
+  dataA = boot_data_A[c('Social.ST.min','Pickups','is_weekday')]
+  intervention_column <- rep(1, nrow(dataA))
+  dataA_intervention <- cbind(intervention = intervention_column, dataA)
+  dataA_nonintervention = cbind(intervention = 1- intervention_column, dataA)
+  predicted_value_intervention_A <- predict(modelA, newdata = dataA_intervention)
+  predicted_value_nonintervention_A <- predict(modelA, newdata = dataA_nonintervention)
+  
+  dataB = boot_data_B[c('Social.ST.min','Total.ST.min','is_weekday')]
+  intervention_column <- rep(1, nrow(dataB))
+  dataB_intervention <- cbind(intervention = intervention_column, dataB)
+  dataB_nonintervention = cbind(intervention = 1- intervention_column, dataB)
+  predicted_value_intervention_B <- predict(modelB, newdata = dataB_intervention)
+  predicted_value_nonintervention_B <- predict(modelB, newdata = dataB_nonintervention)
+  
+  effect.A.dr[i] = 1/length(fitted_values_A)*sum(
+    boot_data_A$intervention * boot_data_A$Total.ST.min / fitted_values_A - 
+      (1-boot_data_A$intervention) * boot_data_A$Total.ST.min / (1-fitted_values_A) -
+      (boot_data_A$intervention - fitted_values_A)/fitted_values_A * predicted_value_intervention_A - 
+      (boot_data_A$intervention - fitted_values_A)/ (1-fitted_values_A) * predicted_value_nonintervention_A
+  )
+  effect.B.dr[i] = 1/length(fitted_values_B)*sum(
+    boot_data_B$intervention * boot_data_B$Pickups / fitted_values_B -
+      (1-boot_data_B$intervention)*boot_data_B$Pickups / (1-fitted_values_B) -
+      (boot_data_B$intervention - fitted_values_B)/fitted_values_B * predicted_value_intervention_B - 
+      (boot_data_B$intervention - fitted_values_B)/(1-fitted_values_B) * predicted_value_nonintervention_B
+  )
+}
+var_effect_A_IPW <- var(effect.A.dr)
+var_effect_B_IPW <- var(effect.B.dr)
 
 
 
