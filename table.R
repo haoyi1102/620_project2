@@ -9,6 +9,9 @@ st = left_join(data,bs,by = "pseudo_id")
 st <- st %>% 
   filter(pseudo_id != 1329)
 
+st$sex.x[which(st$sex.x=='male')] <- 1
+st$sex.x[which(st$sex.x=='Female')] <- 0
+
 stA = st[st$Treatment.x == "A",]
 stB = st[st$Treatment.x == "B",]
 
@@ -52,5 +55,7 @@ table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `
 table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| intervention, data=stB)
 
 # st_AB
-table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| Treatment.x, data=st)
+st_wo <- st[!stA$pseudo_id %in% c(9285, 1329), ]
+table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| Treatment.x, data=st_wo)
+
 
