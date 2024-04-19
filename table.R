@@ -55,7 +55,14 @@ table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `
 table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| intervention, data=stB)
 
 # st_AB
-st_wo <- st[!stA$pseudo_id %in% c(9285, 1329), ]
+st_wo <- st[!st$pseudo_id %in% c(9285, 1329), ]
 table1(~ Total.ST.min + Social.ST.min + Pickups + is_weekday + age.x + sex.x + `procrastination score`| Treatment.x, data=st_wo)
 
 
+bs$sex[which(bs$sex=='male')] <- 1
+bs$sex[which(bs$sex=='Female')] <- 0
+table1(~ age + sex + `procrastination score`| Treatment, data=bs)
+bsA = bs[bs$Treatment == "A",]
+bsB = bs[bs$Treatment == "B",]
+table1(~ age + sex + `procrastination score`| Treatment, data=bsA)
+table1(~ age + sex + `procrastination score`| Treatment, data=bsB)
